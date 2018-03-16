@@ -77,7 +77,16 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-    def times(chars: List[Char]): List[(Char, Int)] = ???
+    def times(chars: List[Char]): List[(Char, Int)] = {
+      chars.foldLeft(List() : List[(Char,Int)])((z,i) =>
+        if(z.exists(_._1 == i)){
+          val duple = z.filter(_._1 == i).head
+          (duple._1,duple._2 +1) :: z.filterNot(_._1 == i)
+        }else{
+          (i,1) :: z
+        }
+      )
+    }
   
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
