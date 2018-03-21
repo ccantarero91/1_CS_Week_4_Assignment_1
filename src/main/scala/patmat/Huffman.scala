@@ -166,8 +166,25 @@ object Huffman {
    * This function decodes the bit sequence `bits` using the code tree `tree` and returns
    * the resulting list of characters.
    */
-    def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
-  
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+    def decodeAcc(currentBits: List[Bit], currentTree: CodeTree, currentChars: List[Char]): List[Char] = {
+      currentTree match {
+        case l: Leaf => decodeAcc(currentBits, tree, l.char :: currentChars)
+        case f: Fork =>
+          currentBits match {
+            case Nil => currentChars.reverse
+            case h :: t =>
+              if (h == 0) {
+                decodeAcc(t, f.left, currentChars)
+              } else {
+                decodeAcc(t, f.right, currentChars)
+              }
+          }
+      }
+    }
+
+    decodeAcc(bits, tree, List())
+  }
   /**
    * A Huffman coding tree for the French language.
    * Generated from the data given at
@@ -184,7 +201,7 @@ object Huffman {
   /**
    * Write a function that returns the decoded secret
    */
-    def decodedSecret: List[Char] = ???
+  def decodedSecret: List[Char] = decode(frenchCode,secret)
   
 
   // Part 4a: Encoding using Huffman tree
@@ -193,7 +210,16 @@ object Huffman {
    * This function encodes `text` using the code tree `tree`
    * into a sequence of bits.
    */
-    def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+    def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+      def findChar(tree: CodeTree, char: Char, currentBits : List[Bit]) : List[Bit] = {
+        tree match {
+          case f : Fork if chars(f.left).contains(char) => findChar(f.left,char,0 :: currentBits)
+          case f : Fork if chars(f.right).contains(char) => findChar(f.right,char,1 :: currentBits)
+          case l : Leaf if l.char == char => currentBits
+        }
+      }
+      text.foldLeft(List() : List[Bit])((z,i)=> z union findChar(tree,i,List()) )
+    }
   
   // Part 4b: Encoding using code table
 
@@ -203,8 +229,8 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-    def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
-  
+    def codeBits(table: CodeTable)(char: Char): List[Bit] = table.filter(_._1 == Char).head._2
+
   /**
    * Given a code tree, create a code table which contains, for every character in the
    * code tree, the sequence of bits representing that character.
