@@ -78,7 +78,7 @@ object Huffman {
     def times(chars: List[Char]): List[(Char, Int)] = {
       chars.foldLeft(List() : List[(Char,Int)])((z,i) =>
         if(z.exists(_._1 == i)){
-          val duple = z.filter(_._1 == i).head
+          val duple = z.find(_._1 == i).head
           (duple._1,duple._2 +1) :: z.filterNot(_._1 == i)
         }else{
           (i,1) :: z
@@ -115,12 +115,17 @@ object Huffman {
    * unchanged.
    */
     def combine(trees: List[CodeTree]): List[CodeTree] = {
-      val twoLightTree  = trees.take(2)
-      val fork = makeCodeTree(twoLightTree.head,twoLightTree.tail.head)
-      val dropResList = trees.drop(2)
-      val left = dropResList.takeWhile(weight(_) < fork.weight)
-      val right = dropResList.dropWhile(weight(_) < fork.weight)
-      left union (fork :: right)
+      trees match {
+        case Nil => Nil
+        case l if(l.length < 2) => trees
+        case l if(l.length >= 2) =>
+          val twoLightTree  = l.take(2)
+          val fork = makeCodeTree(twoLightTree.head,twoLightTree.tail.head)
+          val dropResList = l.drop(2)
+          val left = dropResList.takeWhile(weight(_) < fork.weight)
+          val right = dropResList.dropWhile(weight(_) < fork.weight)
+          left union (fork :: right)
+      }
     }
   
   /**
@@ -211,14 +216,15 @@ object Huffman {
    * into a sequence of bits.
    */
     def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-      def findChar(tree: CodeTree, char: Char, currentBits : List[Bit]) : List[Bit] = {
-        tree match {
+      def findChar(actualTree: CodeTree, char: Char, currentBits : List[Bit]) : List[Bit] = {
+        actualTree match {
           case f : Fork if chars(f.left).contains(char) => findChar(f.left,char,0 :: currentBits)
           case f : Fork if chars(f.right).contains(char) => findChar(f.right,char,1 :: currentBits)
-          case l : Leaf if l.char == char => currentBits
+          case l : Leaf if l.char == char => currentBits.reverse
+          case _ => Nil
         }
       }
-      text.foldLeft(List() : List[Bit])((z,i)=> z union findChar(tree,i,List()) )
+      text.foldLeft(List() : List[Bit])((z,i)=> z union findChar(tree,i,List()))
     }
   
   // Part 4b: Encoding using code table
@@ -229,9 +235,13 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-    def codeBits(table: CodeTable)(char: Char): List[Bit] = table.find(a => a._1 == char)
-      .getOrElse(throw new Error(s"codeBits for a char that doesn't exist. char = $char ; table = $table"))._2
-
+    def codeBits(table: CodeTable)(char: Char): List[Bit] = {
+      if(table.exists(_._1 == char)){
+        table.find(_._1 == char).get._2
+      }else{
+        Nil
+      }
+    }
   /**
    * Given a code tree, create a code table which contains, for every character in the
    * code tree, the sequence of bits representing that character.
@@ -244,7 +254,7 @@ object Huffman {
       def converAcc(currentTree: CodeTree, currentBits: List[Bit]): CodeTable = {
         currentTree match {
           case f : Fork => mergeCodeTables(converAcc(f.left,0 :: currentBits), converAcc(f.right,1 :: currentBits))
-          case l : Leaf => List((l.char,currentBits))
+          case l : Leaf => List((l.char,currentBits.reverse))
         }
       }
       converAcc(tree, List())

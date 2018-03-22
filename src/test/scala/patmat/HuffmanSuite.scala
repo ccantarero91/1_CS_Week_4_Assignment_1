@@ -51,4 +51,37 @@ class HuffmanSuite extends FunSuite {
     }
   }
 
+  test("decode and encode a very long text should be identity") {
+    new TestTrees {
+      assert(decode(t2, encode(t2)("abada".toList)) === "abada".toList)
+    }
+  }
+
+  test("combine of a Nil") {
+    new TestTrees {
+      assert(combine(Nil) === Nil)
+    }
+  }
+
+  test(" decode and quickencode a very short text should be identity") {
+    new TestTrees {
+      assert(decode(t1, quickEncode(t1)("ab".toList)) === "ab".toList)
+    }
+  }
+
+  test(" decode and quickencode a very long text should be identity") {
+    new TestTrees {
+      assert(decode(t1, quickEncode(t1)("abababababbbbabaabababbbababab".toList)) === "abababababbbbabaabababbbababab".toList)
+    }
+  }
+
+  test("decode and quick encode is identity") {
+    val test = List('t', 'u', 'r', 'e', ' ', 'f', 'r', 'o', 'm', ' ', '4', '5', ' ', 'B', 'C', ',', ' ', 'm', 'a', 'k', 'i', 'n', 'g', ' ', 'i', 't', ' ', 'o', 'v', 'e', 'r', ' ', '2', '0', '0', '0', ' ', 'y', 'e', 'a', 'r', 's', ' ', 'o', 'l', 'd', '.', ' ', 'R', 'i', 'c', 'h', 'a', 'r', 'd', ' ', 'M', 'c')
+    val encodeOne = encode(frenchCode)(test)
+    val quickEncodeOne = quickEncode(frenchCode)(test)
+    assert(encodeOne === quickEncodeOne)
+  }
+
+//  test("validates ")
+
 }
